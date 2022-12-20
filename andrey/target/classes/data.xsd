@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="test"
+           targetNamespace="test"
+           elementFormDefault="qualified"
+>
+
+    <xs:element name="Деталь" type="tns:Деталь"/>
+
+    <xs:complexType name="Деталь">
+        <xs:sequence>
+            <xs:element name="ИдентификаторДетали" type="xs:string"/>
+            <xs:element name="НаименованиеДетали" type="xs:string"/>
+            <xs:element name="КодПредприятия" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

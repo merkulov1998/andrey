@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:spring="http://camel.apache.org/schema/spring"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+       ">
+
+    <camelContext id="appReaderDetails" xmlns="http://camel.apache.org/schema/spring" streamCache="true">
+        <restConfiguration host="localhost" port="8162" bindingMode="auto" component="netty-http"/>
+
+        <rest path="/service" >
+            <post uri="/addNewStructure"  type="ru.rzd.Structure">
+                <to uri="direct:addNewStructure"/>
+            </post>
+        </rest>
+
+        <route>
+            <from uri="direct:addNewStructure"/>
+            <log message="${body}"/>
+            <setHeader headerName="uuid">
+                <simple>${bean:simpleUuid?method=generateUuid}</simple>
+            </setHeader>
+            <process ref="zipFileProcessor"/>
+            <unmarshal>
+                <base64 lineLength="100000"/>
+            </unmarshal>
+            <unmarshal>
+                <zipFile usingIterator="true"/>
+            </unmarshal>
+            <split parallelProcessing="true" streaming="true" >
+                <simple>${body}</simple>
+                <log message="${body}"/>
+                <to uri="activemq:rzd.asoup3.test.andrew.details"/>
+            </split>
+        </route>
+
+        <route id="readerDetails">
+            <from uri="activemq:rzd.asoup3.test.andrew.details"/>
+            <log message="${body}"/>
+            <choice>
+                <when>
+                    <simple>${body.idFactory} == '1'</simple>
+                    <multicast parallelProcessing="true">
+                        <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.first_a"/>
+                        <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.first_b"/>
+                    </multicast>
+                </when>
+
+                <when>
+                    <simple>${body.idFactory} == '2'</simple>
+                    <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.second"/>
+                </when>
+                <otherwise>
+                    <log message="${body}" loggingLevel="WARN"/>
+                </otherwise>
+            </choice>
+        </route>
+
+
+        <route id="readerFirstA">
+            <from uri="activemq:rzd.asoup3.test.andrew.details.first_a"/>
+
+            <log message="${body}"/>
+        </route>
+
+        <route id="readerFirstB">
+            <from uri="activemq:rzd.asoup3.test.andrew.details.first_b"/>
+            <log message="${header[uuid]}"/>
+            <marshal>
+                <csv/>
+            </marshal>
+            <to uri="file:/tmp/details?fileName=${body.idDetails}.csv"/>
+        </route>
+    </camelContext>
+
+    <bean id="activemq" class="org.apache.camel.component.jms.JmsComponent">
+        <property name="configuration" ref="jmsConfig"/>
+    </bean>
+<bean id="zipFileProcessor" class="ru.rzd.ZipFileProcessor"/>
+    <bean id="simpleUuid" class="org.apache.camel.support.ClassicUuidGenerator"/>
+
+
+    <bean id="structure" class="ru.rzd.Structure"/>
+
+    <bean id="fileXmlProccessor" class="ru.rzd.FileXmlProccessor"/>
+
+    <bean id="jaxbDetail" class="org.apache.camel.converter.jaxb.JaxbDataFormat">
+        <property name="contextPath" value="ru.rzd.Detail"/>
+    </bean>
+
+    <bean id="jmsConnectionFactory" class="org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://0.0.0.0:61616"/>
+        <property name="user" value="admin"/>
+        <property name="password" value="admin"/>
+    </bean>
+
+    <bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+        <property name="deliveryPersistent" value="false"/>
+        <property name="connectionFactory" ref="jmsConnectionFactory"/>
+        <property name="transacted" value="false"/>
+        <property name="concurrentConsumers" value="10"/>
+        <property name="maxConcurrentConsumers" value="10"/>
+    </bean>
+
+</beans>
