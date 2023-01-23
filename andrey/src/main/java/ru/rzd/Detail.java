@@ -2,9 +2,10 @@ package ru.rzd;
 
 import javax.xml.bind.annotation.*;
 
-@XmlRootElement
+
+@XmlRootElement(name = "Detail")
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(propOrder = {"idDetail","nameDetail","idFactory"})
+@XmlType(name = "Detail", propOrder = {"idDetail","nameDetail","idFactory"})
 public class Detail {
 
     @XmlElement(name = "idDetail")
@@ -38,14 +39,5 @@ public class Detail {
 
     public void setIdFactory(int idFactory) {
         this.idFactory = idFactory;
-    }
-
-    @Override
-    public String toString() {
-        return "Detail{" +
-                "idDetail='" + idDetail + '\'' +
-                ", nameDetail='" + nameDetail + '\'' +
-                ", idFactory=" + idFactory +
-                '}';
     }
 }

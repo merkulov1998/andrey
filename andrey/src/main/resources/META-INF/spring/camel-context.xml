@@ -6,12 +6,15 @@
         http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
        ">
 
-    <camelContext id="appReaderDetails" xmlns="http://camel.apache.org/schema/spring" streamCache="true">
-        <restConfiguration host="localhost" port="8162" bindingMode="auto" component="netty-http"/>
+    <camelContext id="appReaderDetails" xmlns="http://camel.apache.org/schema/spring">
+        <restConfiguration host="localhost" port="8162" component="netty-http"/>
 
-        <rest path="/service">
-            <post uri="/addNewStructure"  type="ru.rzd.Structure">
+        <rest path="/service" >
+            <post uri="/addNewStructure" type="ru.rzd.Structure" bindingMode="json">
                 <to uri="direct:addNewStructure"/>
+            </post>
+            <post uri="/addDetail" type="ru.rzd.Detail" bindingMode="xml">
+                <to uri="direct:addNewDetail"/>
             </post>
         </rest>
 
@@ -22,18 +25,15 @@
                 <simple>${bean:simpleUuid?method=generateUuid}</simple>
             </setHeader>
             <process ref="zipFileProcessor"/>
-            <unmarshal>
-                <base64 lineLength="100000"/>
-            </unmarshal>
-            <unmarshal>
-                <zipFile usingIterator="true"/>
-            </unmarshal>
-            <split parallelProcessing="true">
+            <split>
                 <simple>${body}</simple>
-
-                <log message="${body}"/>
                 <to uri="activemq:rzd.asoup3.test.andrew.details"/>
             </split>
+        </route>
+
+        <route id="addDetailToArtemis">
+            <from uri="direct:addNewDetail"/>
+            <to uri="activemq:rzd.asoup3.test.andrew.details"/>
         </route>
 
         <route id="readerDetails">
@@ -41,15 +41,14 @@
             <log message="${body}"/>
             <choice>
                 <when>
-                    <simple>${body.idFactory} == '1'</simple>
+                    <simple >${body.getIdFactory} == 1</simple>
                     <multicast parallelProcessing="true">
                         <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.first_a"/>
                         <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.first_b"/>
                     </multicast>
                 </when>
-
                 <when>
-                    <simple>${body.idFactory} == '2'</simple>
+                    <simple>${body.getIdFactory} == 2</simple>
                     <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.second"/>
                 </when>
                 <otherwise>
@@ -58,33 +57,25 @@
             </choice>
         </route>
 
-
-        <route id="readerFirstA">
-            <from uri="activemq:rzd.asoup3.test.andrew.details.first_a"/>
-
-            <log message="${body}"/>
-        </route>
-
-        <route id="readerFirstB">
-            <from uri="activemq:rzd.asoup3.test.andrew.details.first_b"/>
-            <log message="${header[uuid]}"/>
-            <marshal>
-                <csv/>
-            </marshal>
-            <to uri="file:/tmp/details?fileName=${body.idDetails}.csv"/>
-        </route>
     </camelContext>
 
     <bean id="activemq" class="org.apache.camel.component.jms.JmsComponent">
         <property name="configuration" ref="jmsConfig"/>
     </bean>
-<bean id="zipFileProcessor" class="ru.rzd.ZipFileProcessor"/>
-    <bean id="simpleUuid" class="org.apache.camel.support.ClassicUuidGenerator"/>
 
+    <bean id="zipFileDataFormat" class="org.apache.camel.dataformat.zipfile.ZipFileDataFormat">
+        <property name="usingIterator" value="true"/>
+    </bean>
+
+    <bean id="zipFileProcessor" class="ru.rzd.ZipFileProcessor"/>
+
+    <bean id="simpleUuid" class="org.apache.camel.support.ClassicUuidGenerator"/>
 
     <bean id="structure" class="ru.rzd.Structure"/>
 
-    <bean id="jaxbDetail" class="org.apache.camel.converter.jaxb.JaxbDataFormat">
+    <bean id="fileXmlProccessor" class="ru.rzd.FileXmlProccessor"/>
+
+    <bean id="jaxbDetail" class="org.apache.camel.converter.jaxb.JaxbDataFormat" >
         <property name="contextPath" value="ru.rzd.Detail"/>
     </bean>
 

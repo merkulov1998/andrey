@@ -1,0 +1,12 @@
+POST http://localhost:8162/service/addDetail
+Accept: application/xml; charset=UTF-8
+Content-Type: application/xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<Detail>
+    <idDetail>str</idDetail>
+    <nameDetail>str1</nameDetail>
+    <idFactory>1</idFactory>
+</Detail>
+
+###
