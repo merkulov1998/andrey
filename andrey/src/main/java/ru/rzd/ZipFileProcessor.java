@@ -46,6 +46,7 @@ public class ZipFileProcessor implements Processor {
             }
         } catch (IOException | JAXBException e) {
             e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return files;
     }

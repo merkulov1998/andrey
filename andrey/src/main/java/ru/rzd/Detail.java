@@ -3,18 +3,18 @@ package ru.rzd;
 import javax.xml.bind.annotation.*;
 
 
-@XmlRootElement(name = "Detail")
+@XmlRootElement(name = "Деталь")
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "Detail", propOrder = {"idDetail","nameDetail","idFactory"})
+@XmlType(name = "")
 public class Detail {
 
-    @XmlElement(name = "idDetail")
+    @XmlElement(name = "ИдентификаторДетали")
     private String idDetail;
 
-    @XmlElement(name = "nameDetail")
+    @XmlElement(name = "НаименованиеДетали")
     private String nameDetail;
 
-    @XmlElement(name = "idFactory")
+    @XmlElement(name = "КодПредприятия")
     private int idFactory;
 
     public String getIdDetail() {

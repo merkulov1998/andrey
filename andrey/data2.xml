@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Detail>
-    <idDetail>2</idDetail>
-    <nameDetail>str1</nameDetail>
-    <idFactory>2</idFactory>
-</Detail>
+<Деталь>
+    <ИдентификаторДетали>str2</ИдентификаторДетали>
+    <НаименованиеДетали>str2</НаименованиеДетали>
+    <КодПредприятия>2</КодПредприятия>
+</Деталь>

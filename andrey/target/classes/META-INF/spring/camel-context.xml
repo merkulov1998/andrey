@@ -7,14 +7,21 @@
        ">
 
     <camelContext id="appReaderDetails" xmlns="http://camel.apache.org/schema/spring">
+        <threadPoolProfile id="threadPoolProfile"
+                           defaultProfile="true"
+                           poolSize="10"
+                           maxPoolSize="10"
+        />
+
         <restConfiguration host="localhost" port="8162" component="netty-http"/>
+
 
         <rest path="/service" >
             <post uri="/addNewStructure" type="ru.rzd.Structure" bindingMode="json">
                 <to uri="direct:addNewStructure"/>
             </post>
             <post uri="/addDetail" type="ru.rzd.Detail" bindingMode="xml">
-                <to uri="direct:addNewDetail"/>
+                <to pattern="InOnly"  uri="direct:addNewDetail"/>
             </post>
         </rest>
 
@@ -38,7 +45,7 @@
 
         <route id="readerDetails">
             <from uri="activemq:rzd.asoup3.test.andrew.details"/>
-            <log message="${body}"/>
+            <convertBodyTo type="ru.rzd.Detail"/>
             <choice>
                 <when>
                     <simple >${body.getIdFactory} == 1</simple>
@@ -52,11 +59,29 @@
                     <to pattern="InOnly" uri="activemq:rzd.asoup3.test.andrew.details.second"/>
                 </when>
                 <otherwise>
-                    <log message="${body}" loggingLevel="WARN"/>
+                    <log  message="${body}" loggingLevel="WARN"/>
                 </otherwise>
             </choice>
         </route>
 
+        <route id="readerFirstA">
+            <from uri="activemq:rzd.asoup3.test.andrew.details.first_a"/>
+            <log message="${body}"/>
+        </route>
+
+        <route id="readerFirstB">
+            <from uri="activemq:rzd.asoup3.test.andrew.details.first_b"/>
+            <convertBodyTo type="ru.rzd.Detail"/>
+            <setHeader headerName="idDetail">
+                <simple>${body.getIdDetail}</simple>
+            </setHeader>
+            <log message="${header[uuid]} &amp; ${body.getIdDetail}"/>
+            <process ref="converterToCSV"/>
+            <marshal>
+                <csv/>
+            </marshal>
+            <to pattern="InOnly" uri="file://tmp/details?fileName=${header[idDetail]}.csv"/>
+        </route>
     </camelContext>
 
     <bean id="activemq" class="org.apache.camel.component.jms.JmsComponent">
@@ -74,6 +99,8 @@
     <bean id="structure" class="ru.rzd.Structure"/>
 
     <bean id="fileXmlProccessor" class="ru.rzd.FileXmlProccessor"/>
+
+    <bean id="converterToCSV" class="ru.rzd.ConverterToCSV"/>
 
     <bean id="jaxbDetail" class="org.apache.camel.converter.jaxb.JaxbDataFormat" >
         <property name="contextPath" value="ru.rzd.Detail"/>
